@@ -1,0 +1,52 @@
+package com.provensi.configuration;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springdoc.core.GroupedOpenApi;
+import org.springdoc.core.SwaggerUiConfigParameters;
+import org.springframework.cloud.gateway.route.RouteDefinition;
+import org.springframework.cloud.gateway.route.RouteDefinitionLocator;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
+
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+
+@Configuration
+public class OpenApiConfiguration {
+
+	@Bean
+	@Lazy(false)
+	public List<GroupedOpenApi> apis(RouteDefinitionLocator locator) {
+		List<GroupedOpenApi> groups = new ArrayList<>();
+		List<RouteDefinition> definitions = locator.getRouteDefinitions().collectList().block();
+		for (RouteDefinition definition : definitions) {
+			System.out.println("id: " + definition.getId() + "  " + definition.getUri().toString());
+		}
+		definitions.stream().filter(routeDefinition -> routeDefinition.getId().matches(".*-service"))
+				.forEach(routeDefinition -> {
+					String name = routeDefinition.getId().replaceAll("-service", "");
+					GroupedOpenApi.builder().pathsToMatch("/" + name + "/**").group(name).build();
+				});
+		return groups;
+	}
+
+	@Bean
+	public GroupedOpenApi publicApi() {
+		return GroupedOpenApi.builder().group("user").pathsToExclude("/api/v2/**").pathsToMatch("/api/v1/**").build();
+	}
+
+	@Bean
+	public GroupedOpenApi adminApi() {
+		return GroupedOpenApi.builder().group("admin").pathsToExclude("/api/v1/**").pathsToMatch("/api/v2/**").build();
+	}
+
+	@Bean
+	public OpenAPI customOpenAPI() {
+		return new OpenAPI().components(new Components()).info(new Info().title("Spring MVC REST API"));
+	}
+
+}

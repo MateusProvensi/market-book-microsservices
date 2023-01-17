@@ -1,0 +1,5 @@
+package com.provensi.controller;
+
+public class FooBarController {
+
+}
