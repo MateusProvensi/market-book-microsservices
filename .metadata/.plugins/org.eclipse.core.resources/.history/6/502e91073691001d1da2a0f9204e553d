@@ -1,5 +1,0 @@
-package com.provensi.filter;
-
-public class LoggingFilter {
-
-}
